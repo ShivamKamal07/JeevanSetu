@@ -1,13 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const { analyzeSymptoms } = require("../services/symptomService");
+const { analyze } = require("../controllers/symptomController");
 
-router.post("/analyze", async (req, res) => {
-  const { symptoms } = req.body;
+router.post("/analyze", analyze);
+// router.post("/analyze", async (req, res) => {
+//   const { symptoms } = req.body;
 
-  const result = await analyzeSymptoms(symptoms);
+//   const result = await analyzeSymptoms(symptoms);
 
-  res.json(result);
-});
+//   res.json(result);
+// });
 
 module.exports = router;

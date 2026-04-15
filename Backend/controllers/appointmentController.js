@@ -9,13 +9,14 @@ exports.bookAppointment = async (req, res) => {
     //  validation
     if (!patientId || !doctorId) {
       return res.status(400).json({
-        message: "patientId and doctorId are required"
+        message: "patientId and doctorId are required",
       });
     }
 
     //Find last token for that doctor
-    const last = await Appointment.findOne({ doctorId })
-      .sort({ tokenNumber: -1 });
+    const last = await Appointment.findOne({ doctorId }).sort({
+      tokenNumber: -1,
+    });
 
     const newToken = last ? last.tokenNumber + 1 : 1;
 
@@ -25,11 +26,10 @@ exports.bookAppointment = async (req, res) => {
       doctorId,
       tokenNumber: newToken,
       isEmergency: isEmergency || false,
-      status: "waiting"
+      status: "waiting",
     });
 
     res.json(appointment);
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Error booking appointment" });
@@ -43,21 +43,21 @@ exports.nextPatient = async (req, res) => {
     //current ko complete karo
     await Appointment.findOneAndUpdate(
       { doctorId, status: "serving" },
-      { status: "completed" }
+      { status: "completed" },
     );
 
     //emergency patient pehle
     let next = await Appointment.findOne({
       doctorId,
       status: "waiting",
-      isEmergency: true
+      isEmergency: true,
     }).sort({ tokenNumber: 1 });
 
     //agar emergency nahi mila
     if (!next) {
       next = await Appointment.findOne({
         doctorId,
-        status: "waiting"
+        status: "waiting",
       }).sort({ tokenNumber: 1 });
     }
 
@@ -67,8 +67,15 @@ exports.nextPatient = async (req, res) => {
       await next.save();
     }
 
-    res.json(next);
+    //
+    const io = req.app.get("io");
 
+    io.emit("queueUpdated", {
+      doctorId,
+      currentToken: next?.tokenNumber || null,
+    });
+
+    res.json(next);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Error moving queue" });
@@ -124,13 +131,13 @@ exports.getQueueStatus = async (req, res) => {
     //current serving patient
     const current = await Appointment.findOne({
       doctorId,
-      status: "serving"
+      status: "serving",
     });
 
     // current user appointment
     const user = await Appointment.findOne({
       doctorId,
-      patientId
+      patientId,
     });
 
     if (!user) {
@@ -141,10 +148,10 @@ exports.getQueueStatus = async (req, res) => {
     const ahead = await Appointment.countDocuments({
       doctorId,
       tokenNumber: { $lt: user.tokenNumber },
-      status: "waiting"
+      status: "waiting",
     });
 
-    // doctor 
+    // doctor
     const doctor = await User.findById(doctorId);
 
     const avgTime = doctor?.avgConsultationTime || 10;
@@ -155,9 +162,8 @@ exports.getQueueStatus = async (req, res) => {
       currentToken: current?.tokenNumber || 0,
       yourToken: user.tokenNumber,
       patientsAhead: ahead,
-      waitingTime
+      waitingTime,
     });
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Queue error" });
@@ -171,15 +177,21 @@ exports.markEmergency = async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(
       id,
       { isEmergency: true },
-      { new: true }
+      { new: true },
     );
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    res.json(appointment);
+    const io = req.app.get("io");
 
+    io.emit("emergencyAlert", {
+      appointmentId: appointment._id,
+      doctorId: appointment.doctorId,
+    });
+
+    res.json(appointment);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Error marking emergency" });
