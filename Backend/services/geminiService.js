@@ -1,8 +1,4 @@
-const { GoogleGenAI } = require("@google/genai");
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const axios = require("axios");
 
 exports.analyzeSymptomsAI = async (symptoms) => {
   try {
@@ -20,12 +16,31 @@ Return ONLY valid JSON:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash", // ✅ FINAL FIX
-      contents: prompt,
-    });
+    const response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
+      {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 200
+        }
+      },
+      {
+        params: {
+          key: process.env.GEMINI_API_KEY
+        },
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-    const text = response.text;
+    const text =
+      response.data.candidates[0].content.parts[0].text;
 
     console.log("🔥 RAW AI:", text);
 
@@ -34,12 +49,8 @@ Return ONLY valid JSON:
     return JSON.parse(cleaned);
 
   } catch (err) {
-    console.log("❌ Gemini Error:", err);
+    console.log("❌ Gemini REST Error:", err.response?.data || err.message);
 
-    return {
-      disease: "Unknown",
-      doctorType: "General Physician",
-      severity: "low",
-    };
+    return null; // ⚠️ important change
   }
 };
