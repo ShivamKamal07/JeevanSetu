@@ -49,9 +49,9 @@ function Navbar() {
           
               {token && role === "patient" && (
                 <>
-                  <li className="nav-item">
-                    <Link className="nav-link fw-bold text-dark" to="/patient">Dashboard</Link>
-                  </li>
+                  {/* <li className="nav-item">
+                    <Link className="nav-link fw-bold text-dark" to="/doctors">Book Appointment</Link>
+                  </li> */}
                   <li className="nav-item">
                             <button className="btn btn-danger" onClick={logout}>
                       Logout

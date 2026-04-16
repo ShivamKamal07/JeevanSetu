@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { signup } from "../services/authService";
-import { useNavigate } from "react-router-dom";
+import { signup } from "../services/authService"; 
+import { useNavigate, Link } from "react-router-dom"; 
 import Button from "../components/button";
+
 
 function Signup() {
   const navigate = useNavigate();
@@ -23,13 +24,12 @@ function Signup() {
 
     try {
       const res = await signup(form);
-      
-      
-      if (res) {
-        alert("Signup successful");
-        navigate("/login");
+
+      // ✅ Fix 2: check res.msg for backend errors instead of just if(res)
+      if (res && !res.msg) {
+        navigate("/login", { state: { signupSuccess: true } }); // no alert — use state instead
       } else {
-        setMessage("Signup failed. Please try again.");
+        setMessage(res?.msg || "Signup failed. Please try again.");
       }
     } catch (err) {
       setMessage("An error occurred. Please check your connection.");
@@ -40,15 +40,11 @@ function Signup() {
   };
 
   return (
-    <div
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "85vh" }} 
-    >
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "85vh" }}>
       <div className="col-md-4 shadow p-4 rounded bg-white">
         <h2 className="text-center">Signup</h2>
 
         <form onSubmit={handleSubmit} className="mt-3">
-          {/* Name */}
           <div className="mb-3">
             <label className="form-label fw-bold">Name</label>
             <input
@@ -61,7 +57,6 @@ function Signup() {
             />
           </div>
 
-        
           <div className="mb-3">
             <label className="form-label fw-bold">Email</label>
             <input
@@ -74,7 +69,6 @@ function Signup() {
             />
           </div>
 
-       
           <div className="mb-3">
             <label className="form-label fw-bold">Password</label>
             <input
@@ -87,7 +81,6 @@ function Signup() {
             />
           </div>
 
-          
           <div className="mb-4">
             <label className="form-label fw-bold">Select Role</label>
             <select
@@ -100,16 +93,8 @@ function Signup() {
             </select>
           </div>
 
-       
-          <Button 
-            type="submit" 
-            text="Signup" 
-            customColor="#42adad" 
-            fullWidth 
-            loading={loading} 
-          />
+          <Button type="submit" text="Signup" customColor="#42adad" fullWidth loading={loading} />
 
-         
           {message && (
             <div className="alert alert-danger mt-3 text-center py-2" style={{ fontSize: "0.9rem" }}>
               {message}
@@ -118,7 +103,8 @@ function Signup() {
 
           <div className="text-center mt-3">
             <small className="text-muted">
-              Already have an account? <a href="/login" style={{ color: "#42adad", textDecoration: "none" }}>Login</a>
+              {/* ✅ Fix 3: use React Router <Link> instead of bare <a href> to avoid page reload */}
+              Already have an account? <Link to="/login" style={{ color: "#42adad", textDecoration: "none" }}>Login</Link>
             </small>
           </div>
         </form>

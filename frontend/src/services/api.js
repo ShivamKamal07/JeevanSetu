@@ -2,13 +2,13 @@ const API = "http://localhost:5000/api";
 
 export const fetchWithAuth = async (url, options = {}) => {
   const token = localStorage.getItem("token");
-// console.log("SENDING TOKEN:", token);
+
   try {
     const res = await fetch(API + url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, 
+        Authorization: `Bearer ${token}`,
         ...options.headers,
       },
     });
@@ -19,8 +19,14 @@ export const fetchWithAuth = async (url, options = {}) => {
       return;
     }
 
-    return await res.json();
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error");
+    }
+
+    return data;
   } catch (err) {
-    console.error("API error:", err);
+    console.error(err);
   }
 };

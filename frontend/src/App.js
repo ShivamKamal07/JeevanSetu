@@ -3,12 +3,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import BookAppointment from "./views/BookAppointment";
 import Landing from "./views/landing";
+import DoctorListing  from "./views/DoctorListing";
+import DoctorProfile from "./views/DoctorProfile";
 import Login from "./views/login";
 import Signup from "./views/signup";
 import PatientDashboard from "./views/PatientDashboard";
 import DoctorDashboard from "./views/doctorDashboard";
 import Footer from "./components/footer";
+import SymptomChecker from "./views/SymptomChecker";
 function App() {
   return (
     <BrowserRouter>
@@ -21,7 +25,10 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-
+        <Route path="/book" element={<BookAppointment />} />  
+        <Route path="/symptom" element={<SymptomChecker />} />
+        <Route path="/doctors" element={<DoctorListing />} />
+<Route path="/doctor/:id" element={<DoctorProfile />} />
         <Route path="/patient"
           element={
             <ProtectedRoute roleRequired="patient">
