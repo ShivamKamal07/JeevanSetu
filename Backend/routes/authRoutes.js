@@ -37,10 +37,10 @@ router.post("/signup", async (req, res) => {
 
     await user.save();
 
-    res.status(201).json({
-      success: true,
-      message: "Signup successful",
-    });
+    res.status(200).json({
+  success: true,
+   message: "Signup successful",
+});
 
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
@@ -69,6 +69,8 @@ router.post("/login", async (req, res) => {
       success: true,
       token,
       role: user.role,
+      userId: user._id,
+      name: user.name ,
     });
 
   } catch (err) {
