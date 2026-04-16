@@ -10,6 +10,8 @@ import PatientDashboard from "./views/PatientDashboard";
 import DoctorDashboard from "./views/doctorDashboard";
 import Footer from "./components/footer";
 import Queue from "./views/queue";
+import PatientQueue from './views/PatientQueue';
+import PatientEmergency from "./views/PatientEmergency";
 function App() {
   return (
     <BrowserRouter>
@@ -46,6 +48,20 @@ function App() {
     </ProtectedRoute>
      } 
     />
+    
+    <Route path="/patient/status" element={
+      //  <ProtectedRoute roleRequired="patient">
+           <PatientQueue />
+      // </ProtectedRoute>
+    } />
+
+    <Route path="/patient/emergency" element={
+      // <ProtectedRoute roleRequired="patient">
+        <PatientEmergency />
+      // </ProtectedRoute>
+    } />
+
+
       </Routes>
        
    
