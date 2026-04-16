@@ -9,6 +9,7 @@ import Signup from "./views/signup";
 import PatientDashboard from "./views/PatientDashboard";
 import DoctorDashboard from "./views/doctorDashboard";
 import Footer from "./components/footer";
+import Queue from "./views/queue";
 function App() {
   return (
     <BrowserRouter>
@@ -37,7 +38,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+         
+     <Route path="/queue" 
+     element={
+    <ProtectedRoute roleRequired="doctor">
+      <Queue/>
+    </ProtectedRoute>
+     } 
+    />
       </Routes>
+       
+   
       </main></div>
       <Footer />
     </BrowserRouter>
