@@ -36,3 +36,16 @@
     transform: rotate(360deg);
   }
 } */
+:root {
+  --primary: #42adad;
+  --dark: #213e5e;
+}
+
+.btn-info {
+  background-color: var(--primary) !important;
+  border: none;
+}
+
+.text-info {
+  color: var(--primary) !important;
+}

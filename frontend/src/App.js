@@ -1,11 +1,10 @@
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 import BookAppointment from "./views/BookAppointment";
 import Landing from "./views/landing";
-import DoctorListing  from "./views/DoctorListing";
+import DoctorListing from "./views/DoctorListing";
 import DoctorProfile from "./views/DoctorProfile";
 import Login from "./views/login";
 import Signup from "./views/signup";
@@ -13,39 +12,48 @@ import PatientDashboard from "./views/PatientDashboard";
 import DoctorDashboard from "./views/doctorDashboard";
 import Footer from "./components/footer";
 import SymptomChecker from "./views/SymptomChecker";
+import Queue from "./views/Queue";
+import MyAppointments from "./views/MyAppointments";
 function App() {
   return (
     <BrowserRouter>
-
-  
       <Navbar />
-<div className="flex-grow-1 ">
-  <main className="flex-grow-1" style={{ marginTop: "80px", marginBottom: "80px" }}>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/book" element={<BookAppointment />} />  
-        <Route path="/symptom" element={<SymptomChecker />} />
-        <Route path="/doctors" element={<DoctorListing />} />
-<Route path="/doctor/:id" element={<DoctorProfile />} />
-        <Route path="/patient"
-          element={
-            <ProtectedRoute roleRequired="patient">
-              <PatientDashboard />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route path="/doctor"
-          element={
-            <ProtectedRoute roleRequired="doctor">
-              <DoctorDashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-      </main></div>
+      <div className="flex-grow-1 ">
+        <main
+          className="flex-grow-1"
+          style={{ marginTop: "80px", marginBottom: "80px" }}
+        >
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/book" element={<BookAppointment />} />
+            <Route path="/symptom" element={<SymptomChecker />} />
+            <Route path="/doctors" element={<DoctorListing />} />
+            <Route path="/doctor/:id" element={<DoctorProfile />} />
+
+            <Route path="/queue" element={<Queue />} />
+            <Route path="/appointments" element={<MyAppointments />} />
+            <Route
+              path="/patient"
+              element={
+                <ProtectedRoute roleRequired="patient">
+                  <PatientDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor"
+              element={
+                <ProtectedRoute roleRequired="doctor">
+                  <DoctorDashboard />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </main>
+      </div>
       <Footer />
     </BrowserRouter>
   );

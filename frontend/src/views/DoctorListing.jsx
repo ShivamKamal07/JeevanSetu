@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function DoctorListing() {
-  // 1. Initialize navigate hook
   const navigate = useNavigate();
 
-  // Doctor Data
+  // ✅ Valid MongoDB ObjectIds
   const [doctors] = useState([
-        {
+    {
+      _id: "661f8c9e2a4f3b001234abcd",
       name: "Dr. Amit Sharma",
       specialization: "General Physician",
       experience: "8 Years Experience",
@@ -17,6 +17,7 @@ function DoctorListing() {
       photo: "https://randomuser.me/api/portraits/men/32.jpg",
     },
     {
+      _id: "661f8c9e2a4f3b001234abce",
       name: "Dr. Mansi Bhaskar",
       specialization: "Internal Medicine",
       experience: "12 Years Experience",
@@ -26,6 +27,7 @@ function DoctorListing() {
       photo: "https://randomuser.me/api/portraits/women/44.jpg",
     },
     {
+      _id: "661f8c9e2a4f3b001234abcf",
       name: "Dr. Prachi Verma",
       specialization: "Pediatrician",
       experience: "6 Years Experience",
@@ -35,6 +37,7 @@ function DoctorListing() {
       photo: "https://randomuser.me/api/portraits/women/68.jpg",
     },
     {
+      _id: "661f8c9e2a4f3b001234abd0",
       name: "Dr. Shivam",
       specialization: "Cardiologist",
       experience: "10 Years Experience",
@@ -44,6 +47,7 @@ function DoctorListing() {
       photo: "https://randomuser.me/api/portraits/men/65.jpg",
     },
     {
+      _id: "661f8c9e2a4f3b001234abd1",
       name: "Dr. Rivesh",
       specialization: "Dermatologist",
       experience: "9 Years Experience",
@@ -53,6 +57,7 @@ function DoctorListing() {
       photo: "https://randomuser.me/api/portraits/men/76.jpg",
     },
     {
+      _id: "661f8c9e2a4f3b001234abd2",
       name: "Dr. Ritu Saxena",
       specialization: "Gynecologist",
       experience: "14 Years Experience",
@@ -61,43 +66,6 @@ function DoctorListing() {
       fees: "₹800",
       photo: "https://randomuser.me/api/portraits/women/55.jpg",
     },
-    {
-      name: "Dr. Anil Yadav",
-      specialization: "Orthopedic",
-      experience: "11 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★☆",
-      fees: "₹750",
-      photo: "https://randomuser.me/api/portraits/men/12.jpg",
-    },
-    {
-      name: "Dr. Sneha Kapoor",
-      specialization: "Neurologist",
-      experience: "13 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★★",
-      fees: "₹950",
-      photo: "https://randomuser.me/api/portraits/women/22.jpg",
-    },
-    {
-      name: "Dr. Mohit Tiwari",
-      specialization: "ENT Specialist",
-      experience: "7 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★☆",
-      fees: "₹550",
-      photo: "https://randomuser.me/api/portraits/men/41.jpg",
-    },
-    {
-      name: "Dr. Pooja Mishra",
-      specialization: "Dentist",
-      experience: "8 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★☆",
-      fees: "₹500",
-      photo: "https://randomuser.me/api/portraits/women/35.jpg",
-    },
-    
   ]);
 
   const [search, setSearch] = useState("");
@@ -114,11 +82,9 @@ function DoctorListing() {
     return matchesSearch && matchesSpec;
   });
 
-  // 2. Updated Book Appointment Function
-  const handleBooking = (doctorName) => {
-    localStorage.setItem("selectedDoctor", doctorName);
-    // Redirect to the booking route
-    navigate("/book");
+  // ✅ FIXED NAVIGATION
+  const handleBooking = (doctorId) => {
+    navigate(`/book?doctorId=${doctorId}`);
   };
 
   return (
@@ -266,8 +232,8 @@ function DoctorListing() {
       {/* Doctor List */}
       <div className="doctor-list">
         {filteredDoctors.length > 0 ? (
-          filteredDoctors.map((doc, index) => (
-            <div key={index} className="doctor-card">
+          filteredDoctors.map((doc) => (
+            <div key={doc._id} className="doctor-card">
               <div className="doctor-header">
                 <img src={doc.photo} alt={doc.name} className="doctor-photo" />
                 <div>
@@ -279,22 +245,25 @@ function DoctorListing() {
               <div className="details">
                 {doc.experience} <br />
                 Location: {doc.location} <br />
-                <span className="fees">Consultation Fee: {doc.fees}</span>
+                <span className="fees">
+                  Consultation Fee: {doc.fees}
+                </span>
               </div>
 
               <div className="rating">{doc.rating}</div>
 
-              {/* 3. Re-enabled and corrected Button */}
               <button
                 className="book-btn"
-                onClick={() => handleBooking(doc.name)}
+                onClick={() => handleBooking(doc._id)}
               >
                 Book Appointment
               </button>
             </div>
           ))
         ) : (
-          <p className="text-center w-100">No doctors found matching your search.</p>
+          <p className="text-center w-100">
+            No doctors found matching your search.
+          </p>
         )}
       </div>
     </div>
@@ -302,4 +271,3 @@ function DoctorListing() {
 }
 
 export default DoctorListing;
-

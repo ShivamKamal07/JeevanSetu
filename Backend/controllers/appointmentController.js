@@ -4,26 +4,44 @@ const User = require("../models/doctor");
 
 exports.bookAppointment = async (req, res) => {
   try {
-    const { patientId, doctorId, isEmergency } = req.body;
+    const {
+      patientId,
+      doctorId,
+      isEmergency,
+      name,
+      phone,
+      date, // 👈 full datetime aa raha hai frontend se
+    } = req.body;
 
-    //  validation
+    // ✅ validation
     if (!patientId || !doctorId) {
       return res.status(400).json({
         message: "patientId and doctorId are required",
       });
     }
 
-    //Find last token for that doctor
-    const last = await Appointment.findOne({ doctorId }).sort({
+    // ✅ FIX: doctorId ko safe handle karo
+    let doctorFilter = {};
+    if (doctorId.length === 24) {
+      doctorFilter = { doctorId }; // ObjectId case
+    } else {
+      doctorFilter = {}; // dummy id → ignore for token
+    }
+
+    // ✅ Find last token
+    const last = await Appointment.findOne(doctorFilter).sort({
       tokenNumber: -1,
     });
 
     const newToken = last ? last.tokenNumber + 1 : 1;
 
-    // Create appointment
+    // ✅ Create appointment (ALL fields save karo)
     const appointment = await Appointment.create({
       patientId,
-      doctorId,
+      doctorId: doctorId.length === 24 ? doctorId : null, // 👈 FIX
+      name: name || "",
+      phone: phone || "",
+      date: date ? new Date(date) : null, // 👈 FIX
       tokenNumber: newToken,
       isEmergency: isEmergency || false,
       status: "waiting",
@@ -31,7 +49,7 @@ exports.bookAppointment = async (req, res) => {
 
     res.json(appointment);
   } catch (err) {
-    console.log(err);
+    console.log("BOOK ERROR:", err);
     res.status(500).json({ message: "Error booking appointment" });
   }
 };

@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { fetchWithAuth } from "../services/api";
 import {
   PersonCircle, PeopleFill, ClockHistory,
-  CheckCircle, BoxArrowRight,
+   BoxArrowRight,
 } from "react-bootstrap-icons";
 
 function DoctorDashboard() {
