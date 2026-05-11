@@ -1,83 +1,38 @@
-import React, { useState } from "react";
+
+import React from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getDoctors } from "../services/doctorService";
 
 function DoctorListing() {
   const navigate = useNavigate();
 
-  // ✅ Valid MongoDB ObjectIds
-  const [doctors] = useState([
-    {
-      _id: "661f8c9e2a4f3b001234abcd",
-      name: "Dr. Amit Sharma",
-      specialization: "General Physician",
-      experience: "8 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★★",
-      fees: "₹500",
-      photo: "https://randomuser.me/api/portraits/men/32.jpg",
-    },
-    {
-      _id: "661f8c9e2a4f3b001234abce",
-      name: "Dr. Mansi Bhaskar",
-      specialization: "Internal Medicine",
-      experience: "12 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★☆",
-      fees: "₹700",
-      photo: "https://randomuser.me/api/portraits/women/44.jpg",
-    },
-    {
-      _id: "661f8c9e2a4f3b001234abcf",
-      name: "Dr. Prachi Verma",
-      specialization: "Pediatrician",
-      experience: "6 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★☆",
-      fees: "₹600",
-      photo: "https://randomuser.me/api/portraits/women/68.jpg",
-    },
-    {
-      _id: "661f8c9e2a4f3b001234abd0",
-      name: "Dr. Shivam",
-      specialization: "Cardiologist",
-      experience: "10 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★★",
-      fees: "₹900",
-      photo: "https://randomuser.me/api/portraits/men/65.jpg",
-    },
-    {
-      _id: "661f8c9e2a4f3b001234abd1",
-      name: "Dr. Rivesh",
-      specialization: "Dermatologist",
-      experience: "9 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★☆",
-      fees: "₹650",
-      photo: "https://randomuser.me/api/portraits/men/76.jpg",
-    },
-    {
-      _id: "661f8c9e2a4f3b001234abd2",
-      name: "Dr. Ritu Saxena",
-      specialization: "Gynecologist",
-      experience: "14 Years Experience",
-      location: "Lucknow",
-      rating: "★★★★★",
-      fees: "₹800",
-      photo: "https://randomuser.me/api/portraits/women/55.jpg",
-    },
-  ]);
-
+  const [doctors, setDoctors] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const fetchDoctors = async () => {
+    const data = await getDoctors();
+
+    console.log("API DATA:", data);
+
+    setDoctors(data);
+  };
+
+  console.log("Doctors State:", doctors);
 
   // Filtering logic
   const filteredDoctors = doctors.filter((doc) => {
     const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.specialization.toLowerCase().includes(search.toLowerCase());
+      doc.name?.toLowerCase().includes(search.toLowerCase()) ||
+      doc.specialization?.toLowerCase().includes(search.toLowerCase());
 
-    const matchesSpec = filter === "all" || doc.specialization === filter;
+    const matchesSpec =
+      filter === "all" || doc.specialization === filter;
 
     return matchesSearch && matchesSpec;
   });
@@ -235,22 +190,29 @@ function DoctorListing() {
           filteredDoctors.map((doc) => (
             <div key={doc._id} className="doctor-card">
               <div className="doctor-header">
-                <img src={doc.photo} alt={doc.name} className="doctor-photo" />
+                <img
+                  src="https://randomuser.me/api/portraits/men/32.jpg"
+                  alt={doc.name}
+                  className="doctor-photo"
+                />
+
                 <div>
                   <div className="doctor-name">{doc.name}</div>
-                  <div className="specialization">{doc.specialization}</div>
+
+                  <div className="specialization">
+                    {doc.specialization}
+                  </div>
                 </div>
               </div>
 
               <div className="details">
-                {doc.experience} <br />
-                Location: {doc.location} <br />
+                Location: {doc.location}
+                <br />
+
                 <span className="fees">
-                  Consultation Fee: {doc.fees}
+                  Consultation Fee: ₹ {doc.consultationFee || doc.fee}
                 </span>
               </div>
-
-              <div className="rating">{doc.rating}</div>
 
               <button
                 className="book-btn"
@@ -261,9 +223,7 @@ function DoctorListing() {
             </div>
           ))
         ) : (
-          <p className="text-center w-100">
-            No doctors found matching your search.
-          </p>
+          <p>No doctors found</p>
         )}
       </div>
     </div>

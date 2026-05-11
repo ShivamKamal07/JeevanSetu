@@ -37,8 +37,12 @@ function Queue() {
     try {
       const appt = await fetchWithAuth(`/appointments/user/${userId}`);
 
-      if (appt && appt.length > 0) {
-        const latest = appt[0];
+     const activeAppointments = appt.filter(
+  (a) => a.status !== "completed"
+);
+
+if (activeAppointments.length > 0) {
+      const latest = activeAppointments[0];
         setAppointment(latest);
 
         const doctorId = latest?.doctorId?._id;
@@ -114,7 +118,10 @@ function Queue() {
             { label: "People Ahead", value: queue?.patientsAhead },
             {
               label: "Estimated Time",
-              value: queue?.waitingTime + " min",
+             value:
+  queue?.waitingTime !== undefined
+    ? queue.waitingTime + " min"
+    : "--",
             },
           ].map((item, index) => (
             <div className="col-md-3" key={index}>

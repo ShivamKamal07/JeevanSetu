@@ -22,7 +22,10 @@ function Login() {
         localStorage.setItem("role", res.role);
         localStorage.setItem("userId", res.userId);
         localStorage.setItem("name", res.name);
-
+localStorage.setItem(
+  "doctorProfileId",
+  res.doctorProfileId
+);
         if (res.role === "patient") {
           navigate("/patient");
         } else {

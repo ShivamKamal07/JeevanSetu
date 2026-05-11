@@ -6,6 +6,7 @@ const {
   getUserAppointments,
   cancelAppointment,
   getDoctorAppointments,
+   updateAppointmentStatus,
   getQueueStatus,
   markEmergency,
 } = require("../controllers/appointmentController");
@@ -18,6 +19,6 @@ router.get("/queue/:doctorId/:patientId", getQueueStatus);
 router.post("/next/:doctorId", nextPatient);
 router.patch("/emergency/:id", markEmergency);
 router.delete("/:id", cancelAppointment);
-
+router.put("/:id/status", updateAppointmentStatus);
 
 module.exports = router;

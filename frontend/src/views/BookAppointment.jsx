@@ -37,7 +37,7 @@ function BookAppointment() {
     setError("");
 
     const userId = localStorage.getItem("userId");
-
+  const patientName = localStorage.getItem("name");
     // 🔒 validations
     if (!userId) {
       setError("You are not logged in. Please login first.");
@@ -77,20 +77,18 @@ function BookAppointment() {
     };
 
     const formattedTime = convertTo24Hour(selectedTime);
-    const fullDateTime = `${date}T${formattedTime}:00`;
+   
 
     try {
       // ✅ FINAL FIXED PAYLOAD
       const payload = {
-        patientId: userId,
-        doctorId: doctorId,
-        name: name.trim(),
-        phone,
-        date: fullDateTime, // ✅ IMPORTANT FIX
-        status: "Pending",
-        isEmergency: false,
-      };
-
+  patientId: userId,
+  patientName: patientName,
+  doctorId: doctorId,
+  isEmergency: false,
+  date: date,
+  time: selectedTime,
+};
       console.log("BOOKING PAYLOAD:", payload);
 
       const res = await fetchWithAuth("/appointments/book", {

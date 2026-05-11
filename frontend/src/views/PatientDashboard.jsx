@@ -45,40 +45,43 @@ export default function PatientDashboard() {
         });
   };
 
-  const loadData = useCallback(async () => {
-    // ✅ dummy inside callback (NO WARNING)
-    const dummyQueue = {
-      yourToken: 5,
-      currentToken: 2,
-      patientsAhead: 3,
-      waitingTime: 15,
-    };
+const loadData = useCallback(async () => {
+  try {
+    const appt = await fetchWithAuth(
+      `/appointments/user/${userId}`
+    );
 
-    try {
-      const appt = await fetchWithAuth(`/appointments/user/${userId}`);
-      setAppointments(appt || []);
+    setAppointments(appt || []);
 
-      if (appt && appt.length > 0) {
-        const doctorId = appt[0]?.doctorId?._id;
+    // only active appointment
+    const activeAppointment = appt.find(
+      (a) =>
+        a.status === "waiting" ||
+        a.status === "serving"
+    );
 
-        if (doctorId) {
-          const q = await fetchWithAuth(
-            `/appointments/queue/${doctorId}/${userId}`
-          );
-          setQueue(q || dummyQueue);
-        } else {
-          setQueue(dummyQueue);
-        }
-      } else {
-        setQueue(dummyQueue);
-      }
-    } catch (err) {
-      console.error("Load error:", err);
-      setQueue(dummyQueue);
-    } finally {
-      setLoading(false);
+    if (!activeAppointment) {
+      setQueue(null);
+      return;
     }
-  }, [userId]);
+
+    const doctorId =
+      activeAppointment?.doctorId?._id;
+
+    // queue fetch
+    const queueData = await fetchWithAuth(
+      `/appointments/queue/${doctorId}/${userId}`
+    );
+
+    setQueue(queueData);
+
+  } catch (err) {
+    console.error("Load error:", err);
+    setQueue(null);
+  } finally {
+    setLoading(false);
+  }
+}, [userId]);
 
   useEffect(() => {
     if (userId) loadData();
@@ -99,9 +102,11 @@ export default function PatientDashboard() {
     }
   };
 
-  const upcomingAppointments = appointments
-    .filter((a) => a.status !== "Cancelled")
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const upcomingAppointments = appointments.filter(
+  (a) =>
+    a.status !== "Cancelled" &&
+    a.status !== "completed"
+);
 
   if (loading) {
     return (
@@ -178,13 +183,21 @@ export default function PatientDashboard() {
 
                     <div className="small fw-medium">
                       <div>Date: {formatDate(appt?.date)}</div>
-                      <div>Time: {formatTime(appt?.date)}</div>
+                     <div>Time: {appt?.time || "--"}</div>
 
                       <div>
                         Status:{" "}
-                        <span className="badge bg-warning text-dark">
-                          {appt?.status}
-                        </span>
+                        <span
+  className={`badge ${
+    appt?.status === "waiting"
+      ? "bg-warning text-dark"
+      : appt?.status === "serving"
+      ? "bg-success"
+      : "bg-secondary"
+  }`}
+>
+  {appt?.status}
+</span>
                       </div>
                     </div>
                   </div>
@@ -234,8 +247,11 @@ export default function PatientDashboard() {
                     {stat.label}
                   </p>
                   <p className="h3 fw-bold mb-0">
-                    {stat.value || "--"}
-                  </p>
+  {stat.value !== null &&
+  stat.value !== undefined
+    ? stat.value
+    : "--"}
+</p>
                 </div>
               </div>
             ))}
