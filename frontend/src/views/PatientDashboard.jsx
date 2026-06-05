@@ -51,27 +51,38 @@ const loadData = useCallback(async () => {
       `/appointments/user/${userId}`
     );
 
+    console.log("Appointments:", appt);
+
     setAppointments(appt || []);
 
-    // only active appointment
     const activeAppointment = appt.find(
       (a) =>
         a.status === "waiting" ||
         a.status === "serving"
     );
 
+    console.log("Active Appointment:", activeAppointment);
+
     if (!activeAppointment) {
       setQueue(null);
       return;
     }
 
-    const doctorId =
-      activeAppointment?.doctorId?._id;
+    const doctorId = activeAppointment?.doctorId?._id;
 
-    // queue fetch
+    console.log("Doctor ID:", doctorId);
+    console.log("User ID:", userId);
+
+    if (!doctorId) {
+      setQueue(null);
+      return;
+    }
+
     const queueData = await fetchWithAuth(
       `/appointments/queue/${doctorId}/${userId}`
     );
+
+    console.log("Queue Response:", queueData);
 
     setQueue(queueData);
 
@@ -228,35 +239,56 @@ const loadData = useCallback(async () => {
         </section>
 
         {/* Queue */}
-        <section>
-          <h5 className="fw-bold mb-4">Queue Details</h5>
+    <section>
+  <h5 className="fw-bold mb-4">Queue Details</h5>
 
-          <div className="row g-4">
-            {[
-              { label: "Your Token", value: queue?.yourToken },
-              { label: "Current Token", value: queue?.currentToken },
-              { label: "People Ahead", value: queue?.patientsAhead },
-              {
-                label: "Estimated Time",
-                value: queue?.waitingTime + " min",
-              },
-            ].map((stat, index) => (
-              <div className="col-md-3" key={index}>
-                <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
-                  <p className="text-muted small fw-bold mb-2">
-                    {stat.label}
-                  </p>
-                  <p className="h3 fw-bold mb-0">
-  {stat.value !== null &&
-  stat.value !== undefined
-    ? stat.value
-    : "--"}
-</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+  {!queue ? (
+    <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+      <h6>No Active Queue</h6>
+      <p className="text-muted">
+        You are not currently in any queue
+      </p>
+    </div>
+  ) : (
+    <div className="row g-4">
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            Your Token
+          </p>
+          <h3>{queue.yourToken}</h3>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            Current Token
+          </p>
+          <h3>{queue.currentToken}</h3>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            People Ahead
+          </p>
+          <h3>{queue.patientsAhead}</h3>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            Estimated Time
+          </p>
+          <h3>{queue.waitingTime} min</h3>
+        </div>
+      </div>
+    </div>
+  )}
+</section>
       </main>
     </div>
   );

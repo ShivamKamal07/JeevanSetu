@@ -165,8 +165,10 @@ exports.getDoctorAppointments = async (req, res) => {
 
 exports.getQueueStatus = async (req, res) => {
   try {
-    const { doctorId, userId } = req.params;
-
+    const { doctorId, patientId } = req.params;
+// console.log("doctorId =", doctorId);
+//     console.log("patientId =", patientId);
+    
     // active queue only
     const appointments = await Appointment.find({
       doctorId,
@@ -174,10 +176,9 @@ exports.getQueueStatus = async (req, res) => {
     }).sort({ tokenNumber: 1 });
 
     // find patient appointment
-    const patientAppointment = appointments.find(
-      (a) => String(a.patientId) === String(userId)
-    );
-
+   const patientAppointment = appointments.find(
+  (a) => String(a.patientId) === String(patientId)
+);
     // patient not found
     if (!patientAppointment) {
       return res.json(null);
