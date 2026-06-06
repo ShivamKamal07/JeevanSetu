@@ -20,12 +20,45 @@ const SidebarLink = ({ icon: Icon, label }) => (
 );
 
 export default function PatientDashboard() {
+  const [unreadCounts, setUnreadCounts] = useState({});
   const [queue, setQueue] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const name = localStorage.getItem("name");
   const userId = localStorage.getItem("userId");
+
+
+    const loadUnreadCounts = async () => {
+  try {
+    const counts = {};
+
+    for (const appt of appointments) {
+      const data = await fetchWithAuth(
+        `/chat/unread/${appt._id}/${userId}`
+      );
+
+      counts[appt._id] = data.count;
+    }
+
+    setUnreadCounts(counts);
+  } catch (err) {
+    console.log(err);
+  }
+};
+useEffect(() => {
+  if (appointments.length > 0) {
+    loadUnreadCounts();
+  }
+}, [appointments]);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    loadUnreadCounts();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [appointments]);
 
   // ✅ Format helpers
   const formatDate = (date) => {
@@ -45,40 +78,54 @@ export default function PatientDashboard() {
         });
   };
 
-  const loadData = useCallback(async () => {
-    // ✅ dummy inside callback (NO WARNING)
-    const dummyQueue = {
-      yourToken: 5,
-      currentToken: 2,
-      patientsAhead: 3,
-      waitingTime: 15,
-    };
+const loadData = useCallback(async () => {
+  try {
+    const appt = await fetchWithAuth(
+      `/appointments/user/${userId}`
+    );
 
-    try {
-      const appt = await fetchWithAuth(`/appointments/user/${userId}`);
-      setAppointments(appt || []);
+    console.log("Appointments:", appt);
 
-      if (appt && appt.length > 0) {
-        const doctorId = appt[0]?.doctorId?._id;
+    setAppointments(appt || []);
 
-        if (doctorId) {
-          const q = await fetchWithAuth(
-            `/appointments/queue/${doctorId}/${userId}`
-          );
-          setQueue(q || dummyQueue);
-        } else {
-          setQueue(dummyQueue);
-        }
-      } else {
-        setQueue(dummyQueue);
-      }
-    } catch (err) {
-      console.error("Load error:", err);
-      setQueue(dummyQueue);
-    } finally {
-      setLoading(false);
+    const activeAppointment = appt.find(
+      (a) =>
+        a.status === "waiting" ||
+        a.status === "serving"
+    );
+
+    console.log("Active Appointment:", activeAppointment);
+
+    if (!activeAppointment) {
+      setQueue(null);
+      return;
     }
-  }, [userId]);
+
+    const doctorId = activeAppointment?.doctorId?._id;
+
+    console.log("Doctor ID:", doctorId);
+    console.log("User ID:", userId);
+
+    if (!doctorId) {
+      setQueue(null);
+      return;
+    }
+
+    const queueData = await fetchWithAuth(
+      `/appointments/queue/${doctorId}/${userId}`
+    );
+
+    console.log("Queue Response:", queueData);
+
+    setQueue(queueData);
+
+  } catch (err) {
+    console.error("Load error:", err);
+    setQueue(null);
+  } finally {
+    setLoading(false);
+  }
+}, [userId]);
 
   useEffect(() => {
     if (userId) loadData();
@@ -99,9 +146,11 @@ export default function PatientDashboard() {
     }
   };
 
-  const upcomingAppointments = appointments
-    .filter((a) => a.status !== "Cancelled")
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const upcomingAppointments = appointments.filter(
+  (a) =>
+    a.status !== "Cancelled" &&
+    a.status !== "completed"
+);
 
   if (loading) {
     return (
@@ -110,6 +159,7 @@ export default function PatientDashboard() {
       </div>
     );
   }
+
 
   return (
     <div className="container-fluid p-0 d-flex min-vh-100 bg-light">
@@ -178,23 +228,41 @@ export default function PatientDashboard() {
 
                     <div className="small fw-medium">
                       <div>Date: {formatDate(appt?.date)}</div>
-                      <div>Time: {formatTime(appt?.date)}</div>
+                     <div>Time: {appt?.time || "--"}</div>
 
                       <div>
                         Status:{" "}
-                        <span className="badge bg-warning text-dark">
-                          {appt?.status}
-                        </span>
+                        <span
+  className={`badge ${
+    appt?.status === "waiting"
+      ? "bg-warning text-dark"
+      : appt?.status === "serving"
+      ? "bg-success"
+      : "bg-secondary"
+  }`}
+>
+  {appt?.status}
+</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="col-auto d-flex gap-2">
-                    <button className="btn btn-outline-secondary px-4 fw-bold">
-                      Chat
-                    </button>
+      <Link
+  to={`/chat/${appt._id}`}
+  className="btn btn-outline-secondary px-4 fw-bold"
+>
+  Chat
+
+  {unreadCounts[appt._id] > 0 && (
+    <span className="badge bg-danger ms-2">
+      {unreadCounts[appt._id]}
+    </span>
+  )}
+</Link>
 
                     <button
+                    
                       onClick={() => cancelAppointment(appt._id)}
                       className="btn btn-danger px-4 fw-bold"
                     >
@@ -215,32 +283,56 @@ export default function PatientDashboard() {
         </section>
 
         {/* Queue */}
-        <section>
-          <h5 className="fw-bold mb-4">Queue Details</h5>
+    <section>
+  <h5 className="fw-bold mb-4">Queue Details</h5>
 
-          <div className="row g-4">
-            {[
-              { label: "Your Token", value: queue?.yourToken },
-              { label: "Current Token", value: queue?.currentToken },
-              { label: "People Ahead", value: queue?.patientsAhead },
-              {
-                label: "Estimated Time",
-                value: queue?.waitingTime + " min",
-              },
-            ].map((stat, index) => (
-              <div className="col-md-3" key={index}>
-                <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
-                  <p className="text-muted small fw-bold mb-2">
-                    {stat.label}
-                  </p>
-                  <p className="h3 fw-bold mb-0">
-                    {stat.value || "--"}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+  {!queue ? (
+    <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+      <h6>No Active Queue</h6>
+      <p className="text-muted">
+        You are not currently in any queue
+      </p>
+    </div>
+  ) : (
+    <div className="row g-4">
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            Your Token
+          </p>
+          <h3>{queue.yourToken}</h3>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            Current Token
+          </p>
+          <h3>{queue.currentToken}</h3>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            People Ahead
+          </p>
+          <h3>{queue.patientsAhead}</h3>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
+          <p className="text-muted small fw-bold mb-2">
+            Estimated Time
+          </p>
+          <h3>{queue.waitingTime} min</h3>
+        </div>
+      </div>
+    </div>
+  )}
+</section>
       </main>
     </div>
   );

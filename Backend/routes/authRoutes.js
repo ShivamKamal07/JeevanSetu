@@ -3,14 +3,22 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const verifyToken = require("../middleware/authMiddleware");
-
+const Doctor = require("../models/doctor");
 const router = express.Router();
 
 
 // 🔐 SIGNUP
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+   const {
+  name,
+  email,
+  password,
+  role,
+  specialization,
+  fee,
+  location,
+} = req.body;
 
     // ✅ validation
     if (!name || !email || !password) {
@@ -36,10 +44,41 @@ router.post("/signup", async (req, res) => {
     });
 
     await user.save();
+if (user.role === "doctor") {
+  
+console.log("DOCTOR SIGNUP RUNNING");
+console.log(req.body);
+  const newDoctor = new Doctor({
+  userId: user._id,
+  name: name,
+  specialization: specialization,
+  consultationFee: fee,
+  location: location,
+  availableSlots: [],
+  avgConsultationTime: 10,
+});
 
-    res.status(200).json({
+  await newDoctor.save();
+
+  console.log("Doctor profile created");
+}
+   let doctorProfileId = null;
+
+if (user.role === "doctor") {
+  const doctor = await Doctor.findOne({
+    userId: user._id,
+  });
+
+  doctorProfileId = doctor?._id;
+}
+
+res.status(200).json({
   success: true,
-   message: "Signup successful",
+  token,
+  role: user.role,
+  userId: user._id,
+  doctorProfileId,
+  name: user.name,
 });
 
   } catch (err) {
@@ -65,13 +104,23 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
  console.log("TOKEN:", token);
-    res.status(200).json({
-      success: true,
-      token,
-      role: user.role,
-      userId: user._id,
-      name: user.name ,
-    });
+ let doctorProfileId = null;
+
+if (user.role === "doctor") {
+  const doctorProfile = await Doctor.findOne({
+    userId: user._id,
+  });
+
+  doctorProfileId = doctorProfile?._id;
+}
+  res.status(200).json({
+  success: true,
+  token,
+  role: user.role,
+  userId: user._id,
+  doctorProfileId,
+  name: user.name,
+});
 
   } catch (err) {
     res.status(500).json({ msg: "Server error" });

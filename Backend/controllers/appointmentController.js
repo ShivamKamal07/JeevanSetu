@@ -1,6 +1,7 @@
 const Appointment = require("../models/appointment");
-// const User = require("../models/User");
-const User = require("../models/doctor");
+const User = require("../models/user");
+const Doctor = require("../models/doctor");
+
 
 exports.bookAppointment = async (req, res) => {
   try {
@@ -8,49 +9,59 @@ exports.bookAppointment = async (req, res) => {
       patientId,
       doctorId,
       isEmergency,
-      name,
-      phone,
-      date, // 👈 full datetime aa raha hai frontend se
+      date,
+      time,
     } = req.body;
 
-    // ✅ validation
-    if (!patientId || !doctorId) {
-      return res.status(400).json({
-        message: "patientId and doctorId are required",
+    // patient find
+    const patient = await User.findById(patientId);
+
+    // doctor find
+    const doctor = await Doctor.findById(doctorId);
+
+    if (!patient || !doctor) {
+      return res.status(404).json({
+        message: "Patient or Doctor not found",
       });
     }
 
-    // ✅ FIX: doctorId ko safe handle karo
-    let doctorFilter = {};
-    if (doctorId.length === 24) {
-      doctorFilter = { doctorId }; // ObjectId case
-    } else {
-      doctorFilter = {}; // dummy id → ignore for token
-    }
-
-    // ✅ Find last token
-    const last = await Appointment.findOne(doctorFilter).sort({
+    // last token
+    const last = await Appointment.findOne({
+      doctorId,
+    }).sort({
       tokenNumber: -1,
     });
 
     const newToken = last ? last.tokenNumber + 1 : 1;
 
-    // ✅ Create appointment (ALL fields save karo)
+    // create appointment
     const appointment = await Appointment.create({
       patientId,
-      doctorId: doctorId.length === 24 ? doctorId : null, // 👈 FIX
-      name: name || "",
-      phone: phone || "",
-      date: date ? new Date(date) : null, // 👈 FIX
+      patientName: patient.name,
+
+      doctorId,
+      doctorName: doctor.name,
+      date: date,
+      time: time,
+
+     consultationFee: doctor.consultationFee,
+      location: doctor.location,
+
       tokenNumber: newToken,
+
       isEmergency: isEmergency || false,
+
       status: "waiting",
     });
 
     res.json(appointment);
+
   } catch (err) {
-    console.log("BOOK ERROR:", err);
-    res.status(500).json({ message: "Error booking appointment" });
+    console.log(err);
+
+    res.status(500).json({
+      message: "Error booking appointment",
+    });
   }
 };
 
@@ -104,14 +115,19 @@ exports.getUserAppointments = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const appointments = await Appointment.find({ patientId: userId })
-      .populate("doctorId", "name specialization location")
+    const appointments = await Appointment.find({
+      patientId: userId,
+    })
+      .populate("doctorId", "name specialization")
       .sort({ createdAt: -1 });
 
     res.json(appointments);
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Error fetching appointments" });
+
+    res.status(500).json({
+      message: "Error fetching appointments",
+    });
   }
 };
 
@@ -131,60 +147,74 @@ exports.getDoctorAppointments = async (req, res) => {
   try {
     const { doctorId } = req.params;
 
-    const appointments = await Appointment.find({ doctorId })
-      .populate("patientId", "name email") // 🔥 patient details
-      .sort({ tokenNumber: 1 }); // 🔥 queue order
+    const appointments = await Appointment.find({
+      doctorId,
+    })
+      .populate("patientId", "name email")
+      .sort({ createdAt: -1 });
 
     res.json(appointments);
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Error fetching doctor appointments" });
+
+    res.status(500).json({
+      message: "Error fetching doctor appointments",
+    });
   }
 };
 
 exports.getQueueStatus = async (req, res) => {
   try {
     const { doctorId, patientId } = req.params;
-
-    //current serving patient
-    const current = await Appointment.findOne({
+// console.log("doctorId =", doctorId);
+//     console.log("patientId =", patientId);
+    
+    // active queue only
+    const appointments = await Appointment.find({
       doctorId,
-      status: "serving",
-    });
+      status: { $in: ["waiting", "serving"] },
+    }).sort({ tokenNumber: 1 });
 
-    // current user appointment
-    const user = await Appointment.findOne({
-      doctorId,
-      patientId,
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "Appointment not found" });
+    // find patient appointment
+   const patientAppointment = appointments.find(
+  (a) => String(a.patientId) === String(patientId)
+);
+    // patient not found
+    if (!patientAppointment) {
+      return res.json(null);
     }
 
-    //patients ahead
-    const ahead = await Appointment.countDocuments({
-      doctorId,
-      tokenNumber: { $lt: user.tokenNumber },
-      status: "waiting",
-    });
+    // current serving patient
+    const servingPatient = appointments.find(
+      (a) => a.status === "serving"
+    );
 
-    // doctor
-    const doctor = await User.findById(doctorId);
+    const currentToken = servingPatient
+      ? servingPatient.tokenNumber
+      : appointments[0]?.tokenNumber || 0;
 
-    const avgTime = doctor?.avgConsultationTime || 10;
+    const yourToken = patientAppointment.tokenNumber;
 
-    const waitingTime = ahead * avgTime;
+    const patientsAhead = Math.max(
+      yourToken - currentToken,
+      0
+    );
+
+    const waitingTime = patientsAhead * 10;
 
     res.json({
-      currentToken: current?.tokenNumber || 0,
-      yourToken: user.tokenNumber,
-      patientsAhead: ahead,
+      yourToken,
+      currentToken,
+      patientsAhead,
       waitingTime,
     });
+
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Queue error" });
+
+    res.status(500).json({
+      message: "Queue error",
+    });
   }
 };
 
@@ -213,5 +243,33 @@ exports.markEmergency = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Error marking emergency" });
+  }
+};
+exports.updateAppointmentStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({
+        message: "Appointment not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      appointment,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
   }
 };

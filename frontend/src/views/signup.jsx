@@ -7,12 +7,15 @@ import Button from "../components/button";
 function Signup() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "patient",
-  });
+ const [form, setForm] = useState({
+  name: "",
+  email: "",
+  password: "",
+  role: "patient",
+  specialization: "",
+  fee: "",
+  location: "",
+});
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -92,6 +95,69 @@ function Signup() {
               <option value="doctor">Doctor</option>
             </select>
           </div>
+           {form.role === "doctor" && (
+  <>
+    <div className="mb-3">
+      <label className="form-label fw-bold">
+        Specialization
+      </label>
+
+      <input
+        className="form-control"
+        type="text"
+        placeholder="Enter specialization"
+        value={form.specialization}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            specialization: e.target.value,
+          })
+        }
+        required
+      />
+    </div>
+
+    <div className="mb-3">
+      <label className="form-label fw-bold">
+        Consultation Fee
+      </label>
+
+      <input
+        className="form-control"
+        type="number"
+        placeholder="Enter fee"
+        value={form.fee}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            fee: e.target.value,
+          })
+        }
+        required
+      />
+    </div>
+
+    <div className="mb-4">
+      <label className="form-label fw-bold">
+        Location
+      </label>
+
+      <input
+        className="form-control"
+        type="text"
+        placeholder="Enter location"
+        value={form.location}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            location: e.target.value,
+          })
+        }
+        required
+      />
+    </div>
+  </>
+)}
 
           <Button type="submit" text="Signup" customColor="#42adad" fullWidth loading={loading} />
 
