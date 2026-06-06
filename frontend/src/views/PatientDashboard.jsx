@@ -20,12 +20,45 @@ const SidebarLink = ({ icon: Icon, label }) => (
 );
 
 export default function PatientDashboard() {
+  const [unreadCounts, setUnreadCounts] = useState({});
   const [queue, setQueue] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const name = localStorage.getItem("name");
   const userId = localStorage.getItem("userId");
+
+
+    const loadUnreadCounts = async () => {
+  try {
+    const counts = {};
+
+    for (const appt of appointments) {
+      const data = await fetchWithAuth(
+        `/chat/unread/${appt._id}/${userId}`
+      );
+
+      counts[appt._id] = data.count;
+    }
+
+    setUnreadCounts(counts);
+  } catch (err) {
+    console.log(err);
+  }
+};
+useEffect(() => {
+  if (appointments.length > 0) {
+    loadUnreadCounts();
+  }
+}, [appointments]);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    loadUnreadCounts();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [appointments]);
 
   // ✅ Format helpers
   const formatDate = (date) => {
@@ -127,6 +160,7 @@ const loadData = useCallback(async () => {
     );
   }
 
+
   return (
     <div className="container-fluid p-0 d-flex min-vh-100 bg-light">
       {/* Sidebar */}
@@ -214,11 +248,21 @@ const loadData = useCallback(async () => {
                   </div>
 
                   <div className="col-auto d-flex gap-2">
-                    <button className="btn btn-outline-secondary px-4 fw-bold">
-                      Chat
-                    </button>
+      <Link
+  to={`/chat/${appt._id}`}
+  className="btn btn-outline-secondary px-4 fw-bold"
+>
+  Chat
+
+  {unreadCounts[appt._id] > 0 && (
+    <span className="badge bg-danger ms-2">
+      {unreadCounts[appt._id]}
+    </span>
+  )}
+</Link>
 
                     <button
+                    
                       onClick={() => cancelAppointment(appt._id)}
                       className="btn btn-danger px-4 fw-bold"
                     >

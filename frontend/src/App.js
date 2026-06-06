@@ -14,6 +14,7 @@ import Footer from "./components/footer";
 import SymptomChecker from "./views/SymptomChecker";
 import Queue from "./views/Queue";
 import MyAppointments from "./views/MyAppointments";
+import ChatPage from "./views/ChatPage";
 function App() {
   return (
     <BrowserRouter>
@@ -51,6 +52,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+  path="/chat/:appointmentId"
+  element={<ChatPage />}
+/>
           </Routes>
         </main>
       </div>
